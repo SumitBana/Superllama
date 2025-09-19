@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shimmer Loader Test</title>
+  <style>
+    body {
+      background-color: #222;
+      font-family: Arial, sans-serif;
+      color: white;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .shimmer-loader-container {
+      background: #333;
+      border-radius: 1rem;
+      padding: 1rem;
+      width: 300px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .shimmer-loader {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .shimmer-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(
+        90deg,
+        #333 0%,
+        #666 20%,
+        #aaa 40%,
+        #666 60%,
+        #333 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite linear;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="shimmer-loader-container">
+    <div class="shimmer-loader">
+      <div class="shimmer-bar"></div>
+      <div class="shimmer-bar"></div>
+      <div class="shimmer-bar"></div>
+    </div>
+  </div>
+
+</body>
+</html>

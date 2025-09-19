@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperLlama Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/ry7sBb9X/web-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <!-- Font Awesome for info icon and arrow icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #222; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+
+        body { font-family: 'Quicksand', sans-serif; background-color: #222; }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.7); z-index: 50; }
+
+
+        #rotating-word-wrapper {
+        min-width: 6ch;
+        }
+
+        .word {
+        position: absolute;
+        top: -8px;
+        left: 0;
+        opacity: 0;
+        font-weight: inherit;
+        font-size: 25px;
+        white-space: nowrap;
+        text-align: center;
+        }
+
+        .letter {
+        display: inline-block;
+        position: relative;
+        transform: translateZ(25px);
+        transform-origin: 50% 50% 25px;
+        }
+
+        .letter.out {
+        transform: rotateX(90deg);
+        transition: transform 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+        }
+
+        .letter.behind {
+        transform: rotateX(-90deg);
+        }
+
+        .letter.in {
+        transform: rotateX(0deg);
+        transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .wisteria { color: #3b82f6; }
+        .belize { color: #a8b929; }
+        .pomegranate { color: #c0392b; }
+        .green { color: #16a085; }
+        .orange { color: #e67e22; }
+        .blue { color: #0d55d9; }
+
+
+
+    
+    .loader {
+    width: 40px;
+    aspect-ratio: 1;
+    border: 8px solid #333;
+    box-sizing: border-box;
+    background-color: #333; /* Match the background color */
+    background:
+        radial-gradient(farthest-side, #fff 98%, #333) 50%/20px 20px,
+        radial-gradient(farthest-side, #fff 98%, #333) 50%/20px 20px,
+        radial-gradient(farthest-side, #fff 98%, #333) 50%/20px 20px,
+        radial-gradient(farthest-side, #fff 98%, #333) 50%/20px 20px,
+        radial-gradient(farthest-side, #fff 98%, #333) 50%/20px 20px,
+        linear-gradient(#fff 0 0) 50%/100% 10px,
+        linear-gradient(#fff 0 0) 50%/10px 100%,
+        #333;
+    background-repeat: no-repeat;
+    filter: blur(10px); /* Use a smaller blur radius */
+    animation: l13 0.8s infinite;
+}
+
+@keyframes l13 {
+    100% {
+        background-position: 50% -20px, -20px 50%, 60px 50%, 50% 60px, 50%, 50%, 50%;
+    }
+}
+
+
+
+    .shimmer-loader-container {
+    /* background: #333; */
+    /* border-radius: 1rem; */
+    /* padding: 1rem; */
+    width: 65%;
+    max-width: 56rem;
+    min-width: 0;
+    box-sizing: border-box;
+    }
+
+    .shimmer-loader {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .shimmer-bar {
+    margin-left: 1rem;
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(
+        90deg,
+        #3b82f6 0%,
+        #6898e5 20%,
+        #aaa 40%,
+        #6898e5 60%,
+        #3b82f6 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite linear;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+        /* Textarea styles */
+        textarea {
+            resize: none !important; 
+            overflow-y: hidden;
+            min-height: 50px; max-height: 110px;
+        }
+        textarea.overflow-y-auto { overflow-y: auto; }
+
+        /* Markdown and Code styles */
+        .markdown-body pre {
+            background: #18181b; color: #e5e7eb; border-radius: 0.5rem;
+            overflow-x: auto; position: relative; line-height: 1; margin-bottom: 1em;
+        }
+        .markdown-body pre code {
+            background: none; padding: 1.2em; padding-top: 2.2em; color: inherit;
+            font-size: 1em; line-height: 1.3; display: block; white-space: pre;
+        }
+        .markdown-body code {
+            background: #27272a; color: #facc15; border-radius: 0.3em;
+            padding: 0.2em 0.4em; font-size: 1em;
+        }
+        .copy-code-btn {
+            position: absolute; 
+            top: 0.5em; 
+            right: 0.7em; 
+            background: #6366f1;
+            color: #fff; 
+            border: none; 
+            border-radius: 0.3em; 
+            padding: 0.2em 0.7em;
+            font-size: 0.9em; 
+            cursor: pointer; 
+            opacity: 0.8; 
+            transition: opacity 0.2s; 
+            z-index: 2; /* Lowered from 2 to 1 */
+        }
+        .copy-code-btn:hover { opacity: 1; }
+
+        /* Progress Bar for File Upload */
+        .progress-bar-container {
+            width: 100%; background-color: #444; border-radius: 4px;
+            height: 6px; margin-top: 4px; overflow: hidden;
+        }
+        .progress-bar {
+            width: 0%; height: 100%; background-color: #3b82f6;
+            border-radius: 4px; transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="text-white flex h-screen">
+
+    <!-- Main Chat Container -->
+    <div id="chat-container" class="flex flex-col w-full h-full bg-[#222] shadow-2xl">
+
+        <!-- Header -->
+        <div class="p-4 border-b border-[#333333] flex justify-between items-center relative">
+            <!-- Changed href="#" to href="javascript:void(0);" to prevent page reload on click -->
+            <a href="javascript:void(0);"><img src="https://i.postimg.cc/vT1fHsp5/favicon.png" alt="Home" style="width: 148px;" class="rounded hover:opacity-80 transition" /></a>
+            
+            <!-- Info Button - Centered -->
+            <button id="info-button" class="absolute left-1/2 transform -translate-x-1/2 p-2 bg-[#444444] hover:bg-[#555555] rounded-full transition duration-300 flex items-center justify-center text-xs gap-1">
+    <i class="fas fa-info-circle text-white text-base"></i>
+    <span class="text-white font-medium">info</span>
+</button>
+
+            <div id="status" class="text-sm font-medium text-yellow-400 bg-yellow-900/50 px-3 py-1 rounded-full">Connecting...</div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto relative">
+            <div class="space-y-6 max-w-4xl mx-auto w-full">
+                <div id="chat-bg-image" class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                    <img src="https://i.postimg.cc/d1T5FrD2/background.png" alt="Background" class="w-70 h-auto opacity-80" />
+                </div>
+                <!-- Updated chat-animated-banner for responsiveness and adjusted vertical position -->
+                <div id="chat-animated-banner" class="absolute inset-x-0 top-[65%] transform -translate-y-1/2 z-10 w-full px-4">
+                    <h1 style="font-size: 25px;" class="text-center text-xl sm:text-2xl md:text-3xl font-semibold text-white whitespace-nowrap leading-snug">
+                        Ask Anything About Your
+                        <span id="rotating-word-wrapper" class="inline-block align-middle relative w-auto h-[1em]">
+                            <span class="word wisteria">Documents</span>
+                            <span class="word blue">Docs</span>
+                            <span class="word pomegranate">PDFs</span>
+                            <span class="word orange">txts</span>
+                            <span class="word green">xls</span>
+                            <span class="word green">xlsx</span>
+                            <span class="word belize">csv</span>
+                        </span>
+                    </h1>
+                </div>
+
+
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-6 border-t border-[#333333]">
+            <div class="max-w-4xl mx-auto w-full relative">
+                <div id="file-preview-area" class="mb-3 flex flex-wrap gap-3"></div>
+                <div class="flex items-end space-x-4">
+                    <input type="file" id="file-input" multiple accept=".pdf,.txt,.docx,.xlxs.xls,.csv" class="hidden">
+                    <button id="upload-button" class="p-3 bg-[#444444] hover:bg-[#555555] rounded-full transition duration-300 disabled:opacity-50 relative group flex-shrink-0" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" /></svg>
+                    </button>
+                    <textarea id="message-input" placeholder="Ask Anything..." class="flex-1 bg-[#444444] border border-[#666666] rounded-lg px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 disabled:opacity-50" rows="1" disabled></textarea>
+                    <button id="send-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 sm:px-5 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0" disabled>
+                        <span class="hidden sm:inline sm:mr-2">Send</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-2 text-center">SuperLlama Utilizes Meta LLaMa 3.2 1B, Answers Generated may not be completely accurate.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Modals -->
+    <div id="warning-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center fade-in"><div class="bg-[#333333] border border-[#555555] rounded-lg shadow-xl p-6 w-full max-w-md mx-auto"><h3 class="text-lg font-bold text-red-400">Upload Limit Exceeded</h3><p class="text-gray-200 mt-2">You can upload a maximum of 5 files at a time.</p><button id="close-warning-modal" class="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg">Close</button></div></div>
+    <div id="file-preview-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center fade-in p-4">
+        <div class="bg-[#333333] border border-[#555555] rounded-lg shadow-xl p-6 w-full max-w-2xl h-3/4 flex flex-col sm:h-[90%] sm:max-w-4xl lg:max-w-5xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="file-preview-title" class="text-lg font-bold text-gray-100">File Preview</h3>
+                <button id="close-file-preview-modal" style="font-size: 26px;" class="text-gray-300 hover:text-white">&times;</button>
+            </div>
+            <div id="file-preview-content" class="flex-1 overflow-y-auto bg-[#222222] p-4 rounded"></div>
+        </div>
+    </div>
+    <div id="inactivity-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center fade-in"><div class="bg-[#333333] border border-[#555555] rounded-lg shadow-xl p-6 w-full max-w-md mx-auto"><h3 class="text-lg font-bold text-yellow-400">Warning</h3><p class="text-gray-200 mt-2">Disconnected due to inactivity (10 min timeout).</p><button id="reload-page-btn" class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg">Reload</button></div></div>
+    <div id="upload-info-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center fade-in"><div class="bg-[#333333] border border-[#555555] rounded-lg shadow-xl p-6 w-full max-w-md mx-auto"><h3 class="text-lg font-bold text-gray-100">File Upload Information</h3><p class="text-gray-200 mt-2">Only .pdf, .txt, and .docx files can be uploaded (max 5 files).</p><div class="flex justify-end gap-2 mt-4"><button id="close-upload-info-modal" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg">Close</button><button id="proceed-upload-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg">Proceed to Upload</button></div></div></div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center fade-in p-4">
+        <div class="bg-[#333333] border border-[#555555] rounded-lg shadow-xl p-6 w-full max-w-md mx-auto overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-100">About SuperLlama</h3>
+                <button id="close-info-modal" style="font-size: 26px;" class="text-gray-300 hover:text-white">&times;</button>
+            </div>
+            
+            <div class="flex flex-col items-center text-center">
+                <!-- Placeholder Picture -->
+                <img src="https://i.postimg.cc/8CCMGW7Q/pfp.jpg" alt="Your Picture" class="rounded-full w-24 h-24 object-cover mb-4 border-2 border-blue-500">
+                
+                <!-- Message -->
+                <p class="text-gray-200 mb-6">Hello Everyone, <b>Sumit</b> here, <br>Thanks for using <b>SuperLlama </b>, this is solely completed by me as a part of my final year project, Hope you liked it :)</p>
+                <p class="text-gray-200 mb-6"><b>*SuperLLama Backend is Still in its early stage and requires better optimization and better prompt engineering*</b></p>
+
+                <!-- Links -->
+                <div class="mb-6 w-full">
+                    <h4 class="text-lg font-semibold text-gray-100 mb-2">Useful Links:</h4>
+                    <a href="https://www.google.com" target="_blank" class="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mb-2 transition duration-300">
+                        Host your Backend with NGROK <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                    <a href="https://www.youtube.com" target="_blank" class="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        NGROK Setup <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+
+                <!-- Public IP Field -->
+                <div class="mb-6 w-full">
+                    <h4 class="text-lg font-semibold text-gray-100 mb-2">Host Your Own SuperLlama Backend:</h4>
+                    <p class="text-sm text-gray-400 mb-2">Enter your public IP for your self-hosted SuperLlama backend.</p>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="backend-ip-input" placeholder="e.g., your-public-ip.ngrok-free.app" class="flex-1 bg-[#444444] border border-[#666666] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
+                        <button id="save-ip-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Save</button>
+                    </div>
+                    <p id="ip-save-status" class="text-sm text-gray-400 mt-2"></p>
+                </div>
+
+                <!-- Connect with Me -->
+                <div class="w-full">
+                    <p class="text-gray-200 mb-4"><b>I'm currently looking for opportunities as a fresher, here are some ways to connect with me :</b></p>
+                    <a href="https://www.linkedin.com/in/sumit-saha-a13132289/" target="_blank" class="flex items-center justify-center bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg mb-2 transition duration-300">
+                        <i class="fab fa-linkedin mr-2"></i> LinkedIn
+                    </a>
+                    <a href="mailto:sumitworks1508@gmail.com" target="_blank" class="flex items-center justify-center bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg mb-2 transition duration-300">
+                        <i class="fab fa-linkedin mr-2"></i> Gmail
+                    </a>
+                    <a href="https://github.com/SumitBana" target="_blank" class="flex items-center justify-center bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-lg mb-2 transition duration-300">
+                        <i class="fab fa-github mr-2"></i> GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script>
+        // Global error handler to catch unhandled JavaScript errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("Unhandled JavaScript Error:", { message, source, lineno, colno, error });
+            return true; // Prevent default browser error handling (e.g., console spam)
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Element References ---
+            const getEl = (id) => document.getElementById(id);
+            const chatWindow = getEl('chat-window'), messageInput = getEl('message-input');
+            const sendButton = getEl('send-button'), statusDiv = getEl('status');
+            const uploadButton = getEl('upload-button'), fileInput = getEl('file-input');
+            const filePreviewArea = getEl('file-preview-area'), warningModal = getEl('warning-modal');
+            const inactivityModal = getEl('inactivity-modal'), uploadInfoModal = getEl('upload-info-modal');
+            const filePreviewModal = getEl('file-preview-modal');
+            const filePreviewTitle = getEl('file-preview-title');
+            const filePreviewContent = getEl('file-preview-content');
+            
+            // New Info Modal Elements
+            const infoButton = getEl('info-button');
+            const infoModal = getEl('info-modal');
+            const closeInfoModalButton = getEl('close-info-modal');
+            const backendIpInput = getEl('backend-ip-input');
+            const saveIpButton = getEl('save-ip-button');
+            const ipSaveStatus = getEl('ip-save-status');
+
+            // --- State ---
+            // Use 'let' for WS_URL so it can be updated
+            let WS_URL = localStorage.getItem('superllama_ws_url') || 'wss://finer-obviously-lamb.ngrok-free.app'; 
+            let socket, inactivityTimer;
+            let managedFiles = []; // Manages file state {id, file, status}
+            let currentBotProcessingMessage = null; // To hold the reference to the shimmer message
+
+            // Initialize IP input field with current WS_URL
+            backendIpInput.value = WS_URL.replace('wss://', '').replace('ws://', '');
+
+            // --- WebSocket & Core Logic ---
+            function connect() {
+                console.log('Frontend: Attempting to connect to WebSocket at:', WS_URL);
+                socket = new WebSocket(WS_URL);
+                socket.onopen = () => { 
+                    console.log('Frontend: WebSocket connected.');
+                    updateStatus('Connected', 'green'); 
+                    setTurn(true); 
+                    resetInactivityTimer(); 
+                };
+                socket.onmessage = handleSocketMessage;
+                socket.onclose = (event) => { 
+                    console.log('Frontend: WebSocket closed.', 'Code:', event.code, 'Reason:', event.reason, 'Clean:', event.wasClean);
+                    updateStatus('Disconnected', 'red'); 
+                    setTurn(false); 
+                    if (!inactivityModal.classList.contains('hidden')) {
+                        console.log('Frontend: Inactivity modal already shown, not attempting reconnect.');
+                        return;
+                    }
+                    console.log('Frontend: Attempting to reconnect in 3 seconds...');
+                    setTimeout(connect, 3000); 
+                };
+                socket.onerror = (err) => { 
+                    console.error('Frontend: WS Error:', err); 
+                    updateStatus('Connection Error', 'red'); 
+                    socket.close(); 
+                };
+            }
+
+            function handleSocketMessage(event) {
+                console.log('Frontend: Received raw message:', event.data);
+                const message = event.data;
+                resetInactivityTimer();
+
+                if (message.startsWith('__')) {
+                    handleControlMessage(message);
+                } else {
+                    // If a bot message comes, replace the shimmer with actual text
+                    if (currentBotProcessingMessage) {
+                        console.log('Frontend: Replacing shimmer with bot message.');
+                        const html = marked.parse(message || '');
+                        currentBotProcessingMessage.innerHTML = `<div class="p-1 break-words"><div class="text-gray-200 markdown-body">${html}</div></div>`; // Re-wrap with existing bot message classes
+                        renderMathInElement(currentBotProcessingMessage, { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+                        addCopyCodeButtons(currentBotProcessingMessage);
+                        currentBotProcessingMessage = null; // Clear the reference
+                    } else {
+                        // Fallback: if no shimmer message was present, just add a new message
+                        console.log('Frontend: Adding new bot message (no shimmer to replace).');
+                        addMessage(message, 'bot');
+                    }
+                    setTurn(true); // Enable user input again
+                }
+            }
+
+            function handleControlMessage(message) {
+                const [command, id] = message.split(':');
+                console.log('Frontend: Handling control message:', command, 'ID:', id);
+                switch (command) {
+                    case '__WAITING__':
+                        updateStatus('In Queue', 'yellow');
+                        setTurn(false);
+                        break;
+                    case '__YOUR_TURN__':
+                        updateStatus('Your Turn!', 'green');
+                        // Ensure shimmer is removed if still present (should be replaced by now)
+                        if (currentBotProcessingMessage) {
+                            currentBotProcessingMessage.remove();
+                            currentBotProcessingMessage = null;
+                        }
+                        setTurn(true);
+                        break;
+                    case '__BUSY__':
+                        updateStatus('Processing', 'blue');
+                        setTurn(false);
+                        // If a message is sent and the state becomes busy, ensure shimmer is shown
+                        if (!currentBotProcessingMessage) {
+                            addShimmerMessage();
+                        }
+                        break;
+                    case '__FILE_UPLOAD_SUCCESS__':
+                        updateFileStatus(id, 'uploaded');
+                        break;
+                    case '__FILE_UPLOAD_FAIL__':
+                        updateFileStatus(id, 'failed');
+                        break;
+                    case '__FILE_DELETE_SUCCESS__':
+                        removeFileFromState(id);
+                        break;
+                    case '__FILE_DELETE_FAIL__':
+                        updateFileStatus(id, 'uploaded');
+                        break;
+                    default:
+                        addMessage(message, 'bot');
+                        break;
+                }
+            }
+
+            // --- File Management ---
+            function handleFileSelect(event) {
+                console.log('Frontend: File(s) selected.');
+                const newFiles = Array.from(event.target.files);
+                if (managedFiles.length + newFiles.length > 5) {
+                    console.warn('Frontend: Upload limit exceeded.');
+                    warningModal.classList.remove('hidden');
+                    return;
+                }
+                newFiles.forEach(file => {
+                    const fileState = {
+                        id: crypto.randomUUID(),
+                        file: file,
+                        status: 'uploading' // Initial status
+                    };
+                    managedFiles.push(fileState);
+                    console.log('Frontend: New file added to state:', fileState.file.name, 'ID:', fileState.id);
+                    uploadFile(fileState);
+                });
+                renderFilePreviews();
+                fileInput.value = ''; // Reset input
+            }
+
+            async function uploadFile(fileState) {
+                console.log('Frontend: Starting upload for file:', fileState.file.name, 'ID:', fileState.id);
+                const reader = new FileReader();
+                reader.readAsDataURL(fileState.file);
+                reader.onload = () => {
+                    const payload = {
+                        type: 'file_upload',
+                        id: fileState.id,
+                        file: { name: fileState.file.name, data: reader.result }
+                    };
+                    console.log('Frontend: Sending file upload payload for ID:', fileState.id);
+                    socket.send(JSON.stringify(payload));
+                };
+                reader.onerror = (error) => {
+                    console.error("Frontend: File reading failed for:", fileState.file.name, error);
+                    updateFileStatus(fileState.id, 'failed');
+                };
+            }
+
+            function deleteFile(fileId) {
+                console.log('Frontend: Attempting to delete file with ID:', fileId);
+                const fileState = managedFiles.find(f => f.id === fileId);
+                if (!fileState) {
+                    console.warn('Frontend: File not found in state for deletion, ID:', fileId);
+                    return;
+                }
+                
+                updateFileStatus(fileId, 'deleting');
+                const payload = {
+                    type: 'file_delete',
+                    id: fileState.id,
+                    fileName: fileState.file.name
+                };
+                console.log('Frontend: Sending file delete payload for ID:', fileState.id);
+                socket.send(JSON.stringify(payload));
+            }
+
+            function updateFileStatus(id, status) {
+                console.log('Frontend: updateFileStatus called for ID:', id, 'Status:', status);
+                const file = managedFiles.find(f => f.id === id);
+                if (file) {
+                    console.log('Frontend: Found file for update:', file.file.name, 'Old status:', file.status, 'New status:', status);
+                    file.status = status;
+                    renderFilePreviews();
+                } else {
+                    console.warn('Frontend: File not found for status update, ID:', id);
+                }
+            }
+
+            function removeFileFromState(id) {
+                console.log('Frontend: Removing file from state, ID:', id);
+                const initialCount = managedFiles.length;
+                managedFiles = managedFiles.filter(f => f.id !== id);
+                console.log('Frontend: File removed. Managed files count changed from', initialCount, 'to', managedFiles.length);
+                renderFilePreviews();
+            }
+
+            // Auto-expand textarea up to max-height, then scroll
+            messageInput.addEventListener('input', () => {
+                messageInput.style.height = 'auto'; // Reset height
+                messageInput.style.height = `${messageInput.scrollHeight}px`;
+
+                if (messageInput.scrollHeight >= 200) {
+                    messageInput.classList.add('overflow-y-auto');
+                } else {
+                    messageInput.classList.remove('overflow-y-auto');
+                }
+            });
+
+
+            // --- UI Rendering ---
+            function renderFilePreviews() {
+                console.log('Frontend: renderFilePreviews called. Current managedFiles count:', managedFiles.length);
+                try {
+                    filePreviewArea.innerHTML = '';
+                    managedFiles.forEach(fileState => {
+                        console.log('Frontend: Rendering file:', fileState.file.name, 'Status:', fileState.status);
+                        const tag = document.createElement('div');
+                        tag.className = 'bg-[#555] p-2 rounded-lg flex flex-col text-sm w-40';
+                        
+                        let statusIndicator = '';
+                        if (fileState.status === 'uploading') {
+                            statusIndicator = `<div class="progress-bar-container"><div class="progress-bar" style="width: 50%;"></div></div>`;
+                        } else if (fileState.status === 'deleting') {
+                            statusIndicator = `<div class="flex items-center gap-2 mt-1"><div class="spinner-sm"></div><span>Deleting...</span></div>`;
+                        } else if (fileState.status === 'failed') {
+                            statusIndicator = `<span class="text-red-400 mt-1">Upload Failed</span>`;
+                        }
+
+                        // Add data-id for preview and remove buttons
+                        tag.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <button data-id="${fileState.id}" class="preview-file-btn font-medium text-gray-200 break-all text-left hover:underline">
+                                    ${fileState.file.name}
+                                </button>
+                                ${fileState.status === 'uploaded' ? `<button data-id="${fileState.id}" class="remove-file-btn text-gray-300 hover:text-white text-xl">&times;</button>` : ''}
+                            </div>
+                            ${statusIndicator}
+                        `;
+                        filePreviewArea.appendChild(tag);
+
+                        // Simulate progress bar completion for upload
+                        if (fileState.status === 'uploading') {
+                            setTimeout(() => {
+                                const bar = tag.querySelector('.progress-bar');
+                                if (bar) bar.style.width = '100%';
+                            }, 100);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Frontend: Error during renderFilePreviews:', e);
+                }
+            }
+
+            // --- File Preview Logic ---
+            function showFilePreview(fileState) {
+                console.log('Frontend: Showing preview for file:', fileState.file.name);
+                filePreviewTitle.textContent = fileState.file.name;
+                filePreviewContent.innerHTML = ''; // Clear previous content
+
+                const fileType = fileState.file.name.split('.').pop().toLowerCase();
+
+                if (fileType === 'txt') {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const content = e.target.result;
+                        filePreviewContent.innerHTML = `<pre class="text-gray-100 whitespace-pre-wrap">${content}</pre>`;
+                    };
+                    reader.onerror = (error) => {
+                        console.error("Frontend: Error reading text file for preview:", error);
+                        filePreviewContent.innerHTML = `<p class="text-red-400">Error loading text file for preview.</p>`;
+                    };
+                    reader.readAsText(fileState.file);
+                } else if (fileType === 'pdf') {
+                    const fileUrl = URL.createObjectURL(fileState.file);
+                    filePreviewContent.innerHTML = `<iframe src="${fileUrl}" class="w-full h-full border-none rounded"></iframe>`;
+                    // Revoke object URL when modal is hidden to free memory
+                    filePreviewModal.addEventListener('transitionend', () => {
+                        if (filePreviewModal.classList.contains('hidden')) {
+                            URL.revokeObjectURL(fileUrl);
+                            console.log('Frontend: Revoked object URL for PDF:', fileUrl);
+                        }
+                    }, { once: true });
+                } else if (fileType === 'docx') {
+                    filePreviewContent.innerHTML = `<p class="text-gray-300 text-center py-10">Direct preview for .docx files is not supported in the browser. Please download the file to view it.</p>`;
+                } else {
+                    filePreviewContent.innerHTML = `<p class="text-gray-300 text-center py-10">Preview not available for this file type.</p>`;
+                }
+
+                filePreviewModal.classList.remove('hidden');
+            }
+
+
+            filePreviewArea.addEventListener('click', (e) => {
+                const id = e.target.getAttribute('data-id');
+                if (!id) return; // Not a button with data-id
+
+                const fileState = managedFiles.find(f => f.id === id);
+                if (!fileState) {
+                    console.warn('Frontend: File state not found for ID:', id);
+                    return;
+                }
+
+                if (e.target.classList.contains('remove-file-btn')) {
+                    deleteFile(id);
+                } else if (e.target.classList.contains('preview-file-btn') && fileState.status === 'uploaded') {
+                    showFilePreview(fileState);
+                }
+            });
+            
+            async function sendMessage() {
+                const messageText = messageInput.value.trim();
+                if (!messageText) {
+                    console.log('Frontend: Message input is empty. Not sending.');
+                    return;
+                }
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    console.warn('Frontend: WebSocket not open. Cannot send message.');
+                    return;
+                }
+
+                console.log('Frontend: Sending message:', messageText);
+                setTurn(false);
+                updateStatus('Sending...', 'blue');
+                
+                const bgImage = getEl('chat-bg-image');
+                const banner = getEl('chat-animated-banner');
+                if (bgImage) bgImage.classList.add('hidden');
+                if (banner) banner.classList.add('hidden');
+
+
+                resetInactivityTimer();
+                addMessage(messageText, 'user'); // Add user message
+                addShimmerMessage(); // Add shimmer message immediately after user message
+
+                socket.send(JSON.stringify({ type: 'text', message: messageText }));
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+            }
+            
+            function addMessage(text, sender) {
+                console.log('Frontend: Adding message from', sender, ':', text.substring(0, 50) + '...');
+                const container = chatWindow.querySelector('.space-y-6');
+                const atBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 5;
+                const div = document.createElement('div');
+                div.className = `flex justify-${sender === 'user' ? 'end' : 'start'} fade-in`;
+                
+                if (sender === 'user') {
+                    div.innerHTML = `<div class="bg-[#333] border border-[#666] p-4 rounded-xl rounded-br-none max-w-[75%] break-words"><p class="text-white">${text.replace(/\n/g, '<br>')}</p></div>`;
+                } else {
+                    const html = marked.parse(text || '');
+                    div.innerHTML = `<div class="p-1  break-words"><div class="text-gray-200 markdown-body">${html}</div></div>`;
+                }
+                container.appendChild(div);
+
+                if (sender === 'bot') {
+                    renderMathInElement(div, { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+                    addCopyCodeButtons(div); // Call helper function for copy buttons
+                }
+                if (atBottom) {
+                    console.log('Frontend: Scrolling chat to bottom.');
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                }
+            }
+
+           function addShimmerMessage() {
+    console.log('Frontend: Adding shimmer message.');
+
+    const facts = [
+        "LLMs are trained on trillions of tokens scraped from web, books, and code.",
+        "LLaMA 3.2 1B is optimized for lightweight deployment while retaining accuracy.",
+        "Transformer architecture powers almost all modern LLMs.",
+        "Neural networks mimic the structure of the human brain.",
+        "Positional embeddings help transformers understand word order.",
+        "LLaMA stands for 'Large Language Model Meta AI'.",
+        "The attention mechanism allows models to focus on important words.",
+        "Training LLaMA 3.2 involved massive compute clusters with A100 GPUs.",
+        "Fine-tuning is used to adapt LLMs to specific tasks or domains.",
+        "Tokens are subword units, not full words or characters.",
+        "LLaMA 3.2 uses rotary position encodings to enhance generalization.",
+        "Parameter count in LLMs often determines their raw capacity.",
+        "Zero-shot learning is possible in LLMs thanks to pretraining diversity.",
+        "Inference is just forward-passing through layers of the neural network.",
+        "Training large models can cost millions of dollars in compute.",
+        "LLMs can complete code, solve math, and generate art-like text.",
+        "Transformer blocks are stacked hundreds of layers deep in large models.",
+        "LLaMA 3.2 supports low-bit quantization for efficient deployment.",
+        "Layer normalization improves model stability during training.",
+        "Self-attention computes context-aware representations for each token.",
+        "Decoding strategies like greedy, top-k, and nucleus sampling affect generation style.",
+        "Prompt engineering can drastically affect model output quality.",
+        "LLMs are not explicitly programmed — they learn patterns from data.",
+        "Multi-head attention helps capture diverse linguistic patterns.",
+        "LoRA is a method to fine-tune large models without modifying core weights.",
+        "Even the smallest LLaMA models outperform earlier-generation LLMs.",
+        "Modern LLMs use Mixture of Experts (MoE) to reduce compute during inference.",
+        "Tokenization schemes like SentencePiece break text into trainable units.",
+        "Attention weights are recalculated for every token in each generation step.",
+        "LLaMA 3.2 was pretrained on diverse multilingual and multimodal datasets."
+    ];
+
+    const randomFact = facts[Math.floor(Math.random() * facts.length)];
+
+    const container = chatWindow.querySelector('.space-y-6');
+    const div = document.createElement('div');
+    div.className = `flex justify-start fade-in bot-processing-message`;
+
+    div.innerHTML = `
+        <div class="shimmer-loader-container">
+            <div class="shimmer-loader">
+                <div class="flex items-center gap-4 px-4 py-2 text-sm italic text-white">
+                    <div class="loader"></div>
+                    <span class="max-w-[85%]">${randomFact}</span>
+                </div>
+                <div></div>
+                <div class="shimmer-bar"></div>
+                <div class="shimmer-bar"></div>
+                <div class="shimmer-bar"></div>
+                <div class="shimmer-bar"></div>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(div);
+    currentBotProcessingMessage = div;
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+
+            function addCopyCodeButtons(element) {
+                element.querySelectorAll('pre code').forEach(codeBlock => {
+                    if (codeBlock.parentElement.querySelector('.copy-code-btn')) return; // Prevent duplicate buttons
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Copy';
+                    btn.className = 'copy-code-btn';
+                    btn.onclick = () => {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = codeBlock.textContent.trim();
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        try {
+                            document.execCommand('copy');
+                            btn.textContent = 'Copied!';
+                        } catch (err) {
+                            console.error('Frontend: Failed to copy text:', err);
+                            btn.textContent = 'Error!';
+                        }
+                        document.body.removeChild(textarea);
+                        setTimeout(() => btn.textContent = 'Copy', 1200);
+                    };
+                    codeBlock.parentElement.style.position = 'relative';
+                    codeBlock.parentElement.appendChild(btn);
+                });
+            }
+
+
+            function setTurn(isMyTurn) {
+                console.log('Frontend: Setting turn to:', isMyTurn ? 'User' : 'Bot');
+                messageInput.disabled = !isMyTurn;
+                sendButton.disabled = !isMyTurn;
+                uploadButton.disabled = !isMyTurn;
+                if (isMyTurn) {
+                    messageInput.focus();
+                }
+            }
+
+            function updateStatus(text, color) {
+                console.log('Frontend: Updating status to:', text, 'Color:', color);
+                statusDiv.textContent = text;
+                statusDiv.className = `text-sm font-medium px-3 py-1 rounded-full transition-all duration-300 bg-${color}-900/50 text-${color}-300`;
+            }
+
+            function resetInactivityTimer() {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = setTimeout(() => { 
+                    console.warn('Frontend: Inactivity timeout reached (10 minutes). Closing WebSocket.');
+                    if (socket) socket.close(); 
+                    inactivityModal.classList.remove('hidden'); 
+                }, 10 * 60 * 1000);
+            }
+            
+            const words = document.getElementsByClassName('word');
+            const wordArray = [];
+            let currentWord = 0;
+
+            words[currentWord].style.opacity = 1;
+            for (let i = 0; i < words.length; i++) {
+                splitLetters(words[i]);
+            }
+
+            function changeWord() {
+                const cw = wordArray[currentWord];
+                const nw = currentWord === words.length - 1 ? wordArray[0] : wordArray[currentWord + 1];
+                for (let i = 0; i < cw.length; i++) {
+                animateLetterOut(cw, i);
+                }
+                for (let i = 0; i < nw.length; i++) {
+                nw[i].className = 'letter behind';
+                nw[0].parentElement.style.opacity = 1;
+                animateLetterIn(nw, i);
+                }
+                currentWord = (currentWord === wordArray.length - 1) ? 0 : currentWord + 1;
+            }
+
+            function animateLetterOut(cw, i) {
+                setTimeout(() => {
+                cw[i].className = 'letter out';
+                }, i * 80);
+            }
+
+            function animateLetterIn(nw, i) {
+                setTimeout(() => {
+                nw[i].className = 'letter in';
+                }, 340 + (i * 80));
+            }
+
+            function splitLetters(word) {
+                const content = word.innerHTML;
+                word.innerHTML = '';
+                const letters = [];
+                for (let i = 0; i < content.length; i++) {
+                const letter = document.createElement('span');
+                letter.className = 'letter';
+                letter.innerHTML = content.charAt(i);
+                word.appendChild(letter);
+                letters.push(letter);
+                }
+                wordArray.push(letters);
+            }
+
+            changeWord();
+            setInterval(changeWord, 4000);
+
+            // --- Event Listeners ---
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => { 
+                if (e.key === 'Enter' && !e.shiftKey) { 
+                    e.preventDefault(); 
+                    sendMessage(); 
+                } 
+            });
+            uploadButton.addEventListener('click', () => {
+                console.log('Frontend: Upload button clicked. Showing upload info modal.');
+                uploadInfoModal.classList.remove('hidden');
+            });
+            getEl('proceed-upload-btn').addEventListener('click', () => { 
+                console.log('Frontend: Proceed to Upload button clicked. Hiding modal and triggering file input.');
+                uploadInfoModal.classList.add('hidden'); 
+                fileInput.click(); 
+            });
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            function adjustBannerForSmallScreens() {
+                if (window.innerWidth < 1200) {
+                    const bgImage = document.getElementById('chat-bg-image');
+                    const banner = document.getElementById('chat-animated-banner');
+                    const container = document.querySelector('#chat-window .space-y-6');
+
+                    if (bgImage) bgImage.remove();
+                    if (banner) banner.remove();
+
+                    // Check if the chat is empty (no user or bot messages)
+                    const hasMessages = container?.querySelector('.flex.justify-start, .flex.justify-end');
+                    const alreadyInserted = document.getElementById('mobile-bg-image');
+
+                    if (!hasMessages && !alreadyInserted) {
+                        const wrapper = document.createElement('div');
+                        wrapper.id = 'mobile-bg-image';
+                        wrapper.className = 'absolute inset-0 flex items-center justify-center pointer-events-none z-0';
+
+                        const newImg = document.createElement('img');
+                        newImg.src = 'https://i.postimg.cc/0N23BWs4/background-below1000.png';
+                        newImg.alt = 'Mobile Background';
+                        newImg.className = 'w-70 h-auto opacity-80';
+
+                        wrapper.appendChild(newImg);
+                        container.prepend(wrapper);
+                    }
+                }
+            }
+
+            window.addEventListener('load', adjustBannerForSmallScreens);
+            window.addEventListener('resize', adjustBannerForSmallScreens);
+            
+            // Modal close buttons
+            getEl('close-warning-modal').addEventListener('click', () => {
+                console.log('Frontend: Closing warning modal.');
+                warningModal.classList.add('hidden');
+            });
+            getEl('close-file-preview-modal').addEventListener('click', () => {
+                console.log('Frontend: Closing file preview modal.');
+                filePreviewModal.classList.add('hidden');
+            });
+            getEl('reload-page-btn').addEventListener('click', () => {
+                console.log('Frontend: Reload page button clicked. Reloading...');
+                window.location.reload();
+            });
+            getEl('close-upload-info-modal').addEventListener('click', () => {
+                console.log('Frontend: Closing upload info modal.');
+                uploadInfoModal.classList.add('hidden');
+            });
+            
+            // Prevent all form submissions from reloading the page
+            document.addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+
+            // --- New Info Modal Logic ---
+            infoButton.addEventListener('click', () => {
+                console.log('Frontend: Info button clicked. Showing info modal.');
+                infoModal.classList.remove('hidden');
+            });
+
+            closeInfoModalButton.addEventListener('click', () => {
+                console.log('Frontend: Closing info modal.');
+                infoModal.classList.add('hidden');
+            });
+
+            saveIpButton.addEventListener('click', () => {
+                const newIp = backendIpInput.value.trim();
+                let newWsUrl;
+
+                if (newIp.startsWith('ws://') || newIp.startsWith('wss://')) {
+                    newWsUrl = newIp;
+                } else {
+                    // Default to wss if not specified, or use ws for local development
+                    newWsUrl = `wss://${newIp}`; 
+                }
+
+                if (newWsUrl === WS_URL) {
+                    ipSaveStatus.textContent = 'IP address is already set to this value.';
+                    ipSaveStatus.className = 'text-sm text-yellow-400 mt-2';
+                    return;
+                }
+
+                WS_URL = newWsUrl;
+                localStorage.setItem('superllama_ws_url', WS_URL);
+                ipSaveStatus.textContent = `IP saved! New WS URL: ${WS_URL}. Reconnecting...`;
+                ipSaveStatus.className = 'text-sm text-green-400 mt-2';
+                console.log('Frontend: New WS URL saved:', WS_URL);
+
+                // Close existing socket and reconnect
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.close();
+                }
+                connect(); // Reconnect with the new URL
+                infoModal.classList.add('hidden'); // Close modal after saving
+            });
+
+            // Initial connection
+            connect();
+        });
+    </script>
+</body>
+</html>
